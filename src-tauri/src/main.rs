@@ -2,8 +2,7 @@
 
 fn main() {
 tauri::Builder::default()
-    .invoke_handler(tauri::generate_handler![process])
-    .invoke_handler(tauri::generate_handler![test])
+    .invoke_handler(tauri::generate_handler![process, test])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
