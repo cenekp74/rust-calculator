@@ -7,6 +7,11 @@ tauri::Builder::default()
     .expect("error while running tauri application");
 }
 
+enum CalculatorError {
+    SyntaxError(&'static str),
+    InternalError(&'static str),
+}
+
 #[derive(Debug, Clone, Copy)]
 enum Token {
     Integer(i32),
@@ -38,25 +43,25 @@ enum Expression {
 }
 
 impl Expression {
-    fn eval(&self) -> Result<i32, &str> {
+    fn eval(&self) -> Result<i32, CalculatorError> {
         match self {
             Self::Binary(op, lhs, rhs) => {
-                let lhs_value = lhs.eval().unwrap();
-                let rhs_value = rhs.eval().unwrap();
+                let lhs_value = lhs.eval()?;
+                let rhs_value = rhs.eval()?;
                 match op {
                     Operator::Add => Ok(lhs_value + rhs_value),
                     Operator::Sub => Ok(lhs_value - rhs_value),
                     Operator::Mul => Ok(lhs_value * rhs_value),
                     Operator::Dev => Ok(lhs_value / rhs_value),
                     Operator::Pow => Ok(i32::pow(lhs_value, rhs_value as u32)),
-                    _ => Err("evalerr")
+                    _ => Err(CalculatorError::InternalError("evaluation error"))
                 }
             }
             Self::Unary(op, expr) => {
-                let expr_value = expr.eval().unwrap();
+                let expr_value = expr.eval()?;
                 match op {
                     Operator::Neg => Ok(-expr_value),
-                    _ => Err("evalerr")
+                    _ => Err(CalculatorError::InternalError("evaluation error"))
                 }
             }
             Self::Integer(n) => Ok(*n),
@@ -64,7 +69,7 @@ impl Expression {
     }
 }
 
-fn tokenize(s: &str) -> Result<Vec<Token>, String> {
+fn tokenize(s: &str) -> Result<Vec<Token>, CalculatorError> {
     let mut tokens: Vec<Token> = Vec::new();
     let mut last_c: char = ' ';
     let mut last_number: String = String::new();
@@ -128,45 +133,45 @@ impl Parser {
         self.current_index += 1;
     }
 
-    fn current_token(&self) -> Result<Token, &str> {
+    fn current_token(&self) -> Result<Token, CalculatorError> {
         if self.current_index >= self.tokens.len() {
-            return Err("Current index out of range");
+            return Err(CalculatorError::InternalError("Index out of range"));
         }
         Ok(self.tokens[self.current_index])
     }
     
-    fn primary(&mut self) -> Result<Expression, &str> {
-        let token = self.current_token().unwrap();
+    fn primary(&mut self) -> Result<Expression, CalculatorError> {
+        let token = self.current_token()?;
         self.consume_token();
         match token {
             Token::Integer(n) => Ok(Expression::Integer(n)),
             Token::OpenParent => {
-                let expr = self.expression().unwrap();
-                match self.current_token().unwrap() {
+                let expr = self.expression()?;
+                match self.current_token()? {
                     Token::CloseParent => Ok(expr),
-                    _ => Err("syntaxerr"),
+                    _ => Err(CalculatorError::SyntaxError("Parenthesis error")),
                 }
             }
             Token::Minus => {
-                let expr = self.factor().unwrap();
+                let expr = self.factor()?;
                 Ok(Expression::Unary(
                     Operator::Neg,
                     Box::new(expr),
                 ))
             }
             _ => {
-                Err("syntaxerr")
+                Err(CalculatorError::SyntaxError(""))
             }
         }
     }
 
-    fn factor(&mut self) -> Result<Expression, &str> {
-        let expr = self.primary().unwrap();
-        let token = self.current_token().unwrap();
+    fn factor(&mut self) -> Result<Expression, CalculatorError> {
+        let expr = self.primary()?;
+        let token = self.current_token()?;
         match token {
             Token::Power => {
                 self.consume_token();
-                let rhs = self.factor().unwrap();
+                let rhs = self.factor()?;
                 Ok(Expression::Binary(
                     Operator::Pow,
                     Box::new(expr),
@@ -179,15 +184,15 @@ impl Parser {
         }
     }
 
-    fn term(&mut self) -> Result<Expression, &str> {
-        let mut expr = self.factor().unwrap();
+    fn term(&mut self) -> Result<Expression, CalculatorError> {
+        let mut expr = self.factor()?;
 
         loop {
-            let token = self.current_token().unwrap();
+            let token = self.current_token()?;
             match token {
                 Token::Star => {
                     self.consume_token();
-                    let rhs = self.factor().unwrap();
+                    let rhs = self.factor()?;
                     expr = Expression::Binary(
                         Operator::Mul,
                         Box::new(expr),
@@ -196,7 +201,7 @@ impl Parser {
                 }
                 Token::Slash => {
                     self.consume_token();
-                    let rhs = self.factor().unwrap();
+                    let rhs = self.factor()?;
                     expr = Expression::Binary(
                         Operator::Dev,
                         Box::new(expr),
@@ -210,14 +215,14 @@ impl Parser {
         
     }
 
-    fn expression(&mut self) -> Result<Expression, &str> {
-        let mut expr = self.term().unwrap();
+    fn expression(&mut self) -> Result<Expression, CalculatorError> {
+        let mut expr = self.term()?;
         loop {
-            let token = self.current_token().unwrap();
+            let token = self.current_token()?;
             match token {
                 Token::Plus => {
                     self.consume_token();
-                    let rhs = self.term().unwrap();
+                    let rhs = self.term()?;
                     expr = Expression::Binary(
                         Operator::Add,
                         Box::new(expr),
@@ -226,7 +231,7 @@ impl Parser {
                 }
                 Token::Minus => {
                     self.consume_token();
-                    let rhs = self.term().unwrap();
+                    let rhs = self.term()?;
                     expr = Expression::Binary(
                         Operator::Sub,
                         Box::new(expr),
@@ -240,16 +245,26 @@ impl Parser {
     }
 }
 
+fn process_calculator_string(input: &str) -> Result<i32, CalculatorError> {
+    let tokens: Vec<Token> = tokenize(input)?;
+    let mut parser = Parser::new(tokens);
+    let expr = parser.expression()?;
+    let res = expr.eval()?;
+    Ok(res)
+}
+
 #[tauri::command]
 fn process(input: &str) -> String {
-    let tokens: Vec<Token> = tokenize(input).unwrap();
-    // let s = format!("{:?}", tokens);
-    // return s;
-    let mut parser = Parser::new(tokens);
-    let expr = parser.expression().unwrap();
-    let res = expr.eval().unwrap();
-    let s = format !("{:?}", res);
-    s
+    let result = process_calculator_string(input);
+    match result {
+        Ok(res) => res.to_string(),
+        Err(e) => {
+            match e {
+                CalculatorError::InternalError(s) => String::from(format!("Internal error: {}", s)),
+                CalculatorError::SyntaxError(s) => String::from(format!("Syntax error {}", s)),
+            }
+        }
+    }
 }
 
 #[tauri::command]
