@@ -1,5 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+use std::fmt::Binary;
+
 fn main() {
 tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![process])
@@ -35,7 +37,33 @@ enum Expression {
     Binary(Operator, Box<Expression>, Box<Expression>),
     Unary(Operator, Box<Expression>),
     Integer(i32),
-    Arbitrary(Operator, Vec<Expression>),
+}
+
+impl Expression {
+    fn eval(&self) -> Result<i32, &str> {
+        match self {
+            Self::Binary(op, lhs, rhs) => {
+                let lhs_value = lhs.eval().unwrap();
+                let rhs_value = rhs.eval().unwrap();
+                match op {
+                    Operator::Add => Ok(lhs_value + rhs_value),
+                    Operator::Sub => Ok(lhs_value - rhs_value),
+                    Operator::Mul => Ok(lhs_value * rhs_value),
+                    Operator::Dev => Ok(lhs_value / rhs_value),
+                    Operator::Pow => Ok(i32::pow(lhs_value, rhs_value as u32)),
+                    _ => Err("evalerr")
+                }
+            }
+            Self::Unary(op, expr) => {
+                let expr_value = expr.eval().unwrap();
+                match op {
+                    Operator::Neg => Ok(-expr_value),
+                    _ => Err("evalerr")
+                }
+            }
+            Self::Integer(n) => Ok(*n),
+        }
+    }
 }
 
 fn tokenize(s: &str) -> Result<Vec<Token>, String> {
@@ -204,7 +232,7 @@ impl Parser {
                     self.consume_token();
                     let rhs = self.term().unwrap();
                     expr = Expression::Binary(
-                        Operator::Add,
+                        Operator::Sub,
                         Box::new(expr),
                         Box::new(rhs)
                     );
@@ -222,7 +250,8 @@ fn process(input: &str) -> String {
     // let s = format!("{:?}", tokens);
     // return s;
     let mut parser = Parser::new(tokens);
-    let res = parser.expression().unwrap();
+    let expr = parser.expression().unwrap();
+    let res = expr.eval().unwrap();
     let s = format !("{:?}", res);
     s
 }
