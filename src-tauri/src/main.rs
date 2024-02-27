@@ -1,10 +1,9 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
-use std::fmt::Binary;
-
 fn main() {
 tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![process])
+    .invoke_handler(tauri::generate_handler![test])
     .run(tauri::generate_context!())
     .expect("error while running tauri application");
 }
@@ -165,8 +164,6 @@ impl Parser {
     fn factor(&mut self) -> Result<Expression, &str> {
         let expr = self.primary().unwrap();
         let token = self.current_token().unwrap();
-        println!("{:?}", expr);
-        println!("{:?}", token);
         match token {
             Token::Power => {
                 self.consume_token();
@@ -254,4 +251,21 @@ fn process(input: &str) -> String {
     let res = expr.eval().unwrap();
     let s = format !("{:?}", res);
     s
+}
+
+#[tauri::command]
+fn test() -> String {
+    let test_cases = [
+        ("1+1", 2),
+        ("1+2*2", 5),
+        ("1+2*3^2", 19),
+    ];
+    let mut failed = Vec::new();
+    for (input_string, expected_output) in test_cases {
+        let result = process(input_string).parse::<i32>().unwrap();
+        if result != expected_output {
+            failed.push((input_string, expected_output, result))
+        }
+    }
+    format!("{:?}", failed)
 }
