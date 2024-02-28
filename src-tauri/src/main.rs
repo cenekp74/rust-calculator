@@ -1,5 +1,6 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
+
 fn main() {
 tauri::Builder::default()
     .invoke_handler(tauri::generate_handler![process, test])
@@ -101,13 +102,20 @@ fn tokenize(s: &str) -> Result<Vec<Token>, CalculatorError> {
         if c == ' ' {
             continue;
         }
-        if c.is_digit(10) {
+        if c.is_digit(10) || c == '.' {
             last_number.push(c);
         } 
         else {
             if !last_number.is_empty() {
-                tokens.push(Token::Number(last_number.parse::<f64>().unwrap()));
-                last_number.clear()
+                let number = last_number.parse::<f64>();
+                if let Ok(n) = number {
+                    tokens.push(Token::Number(n));
+                    last_number.clear()
+                }
+                else {
+                    return Err(CalculatorError::SyntaxError("Wrong float definition"));
+                }
+                
             }
         }
         if c == '+' {
@@ -137,7 +145,15 @@ fn tokenize(s: &str) -> Result<Vec<Token>, CalculatorError> {
         last_c = c;
     }
     if !last_number.is_empty() {
-        tokens.push(Token::Number(last_number.parse::<f64>().unwrap()));
+        let number = last_number.parse::<f64>();
+        if let Ok(n) = number {
+            tokens.push(Token::Number(n));
+            last_number.clear()
+        }
+        else {
+            return Err(CalculatorError::SyntaxError("Wrong float definition"));
+        }
+        
     }
     tokens.push(Token::End);
     Ok(tokens)
@@ -290,7 +306,7 @@ fn process_calculator_string(input: &str) -> Result<f64, CalculatorError> {
     let tokens: Vec<Token> = tokenize(input)?;
     let mut parser = Parser::new(tokens);
     let expr = parser.expression()?;
-    println!("{:?}", expr);
+    // println!("{:?}", expr);
     let res = expr.eval()?;
     Ok(res)
 }
@@ -312,7 +328,7 @@ fn process(input: &str) -> String {
 
 #[tauri::command]
 fn test() -> String {
-    let test_cases: [(&str, f64); 9] = [
+    let test_cases: [(&str, f64); 11] = [
         ("1+1", 2.0),
         ("1+2*2", 5.0),
         ("1+2*3^2", 19.0),
@@ -322,6 +338,8 @@ fn test() -> String {
         ("3*3!+1", 19.0),
         ("(3*3)!-1", 362879.0),
         ("-2*((1+3)*3)", -24.0),
+        ("5/2", 2.5),
+        ("1.1 + 9.6", 10.7),
     ];
     let mut failed = Vec::new();
     for (input_string, expected_output) in test_cases {
