@@ -7,8 +7,8 @@ tauri::Builder::default()
     .expect("error while running tauri application");
 }
 
-fn factorial(number : i32) -> Result<i32, CalculatorError> {
-    let mut factorial : i32 = 1;
+fn factorial(number : i128) -> Result<f64, CalculatorError> {
+    let mut factorial : i128 = 1;
     for i in 1..(number+1) {
         if let Some(n) = factorial.checked_mul(i) {
             factorial = n;
@@ -17,7 +17,7 @@ fn factorial(number : i32) -> Result<i32, CalculatorError> {
             return Err(CalculatorError::MathError);
         }
     }
-    Ok(factorial)
+    Ok(factorial as f64)
 }
 
 enum CalculatorError {
@@ -28,7 +28,7 @@ enum CalculatorError {
 
 #[derive(Debug, Clone, Copy)]
 enum Token {
-    Integer(i32),
+    Number(f64),
     Plus,
     Minus,
     Star,
@@ -55,11 +55,11 @@ enum Operator {
 enum Expression {
     Binary(Operator, Box<Expression>, Box<Expression>),
     Unary(Operator, Box<Expression>),
-    Integer(i32),
+    Number(f64),
 }
 
 impl Expression {
-    fn eval(&self) -> Result<i32, CalculatorError> {
+    fn eval(&self) -> Result<f64, CalculatorError> {
         match self {
             Self::Binary(op, lhs, rhs) => {
                 let lhs_value = lhs.eval()?;
@@ -69,7 +69,7 @@ impl Expression {
                     Operator::Sub => Ok(lhs_value - rhs_value),
                     Operator::Mul => Ok(lhs_value * rhs_value),
                     Operator::Dev => Ok(lhs_value / rhs_value),
-                    Operator::Pow => Ok(i32::pow(lhs_value, rhs_value as u32)),
+                    Operator::Pow => Ok(f64::powf(lhs_value, rhs_value)),
                     _ => Err(CalculatorError::InternalError("evaluation error"))
                 }
             }
@@ -77,11 +77,18 @@ impl Expression {
                 let expr_value = expr.eval()?;
                 match op {
                     Operator::Neg => Ok(-expr_value),
-                    Operator::Fac => factorial(expr_value),
+                    Operator::Fac => {
+                        if expr_value.fract() == 0.0  {
+                            factorial(expr_value as i128)
+                        }
+                        else {
+                            Err(CalculatorError::MathError)
+                        }
+                    },
                     _ => Err(CalculatorError::InternalError("evaluation error"))
                 }
             }
-            Self::Integer(n) => Ok(*n),
+            Self::Number(n) => Ok(*n),
         }
     }
 }
@@ -99,7 +106,7 @@ fn tokenize(s: &str) -> Result<Vec<Token>, CalculatorError> {
         } 
         else {
             if !last_number.is_empty() {
-                tokens.push(Token::Integer(last_number.parse::<i32>().unwrap()));
+                tokens.push(Token::Number(last_number.parse::<f64>().unwrap()));
                 last_number.clear()
             }
         }
@@ -130,7 +137,7 @@ fn tokenize(s: &str) -> Result<Vec<Token>, CalculatorError> {
         last_c = c;
     }
     if !last_number.is_empty() {
-        tokens.push(Token::Integer(last_number.parse::<i32>().unwrap()));
+        tokens.push(Token::Number(last_number.parse::<f64>().unwrap()));
     }
     tokens.push(Token::End);
     Ok(tokens)
@@ -165,7 +172,7 @@ impl Parser {
         let mut result_expression: Expression;
         self.consume_token();
         match token {
-            Token::Integer(n) => {result_expression = Expression::Integer(n)},
+            Token::Number(n) => {result_expression = Expression::Number(n)},
             Token::OpenParent => {
                 let expr = self.expression()?;
                 match self.current_token()? {
@@ -193,7 +200,7 @@ impl Parser {
                 break;
             }
         }
-        if let Token::Integer(_) = self.current_token()? {
+        if let Token::Number(_) = self.current_token()? {
             return Err(CalculatorError::SyntaxError(""));
         }
         Ok(result_expression)
@@ -279,7 +286,7 @@ impl Parser {
     }
 }
 
-fn process_calculator_string(input: &str) -> Result<i32, CalculatorError> {
+fn process_calculator_string(input: &str) -> Result<f64, CalculatorError> {
     let tokens: Vec<Token> = tokenize(input)?;
     let mut parser = Parser::new(tokens);
     let expr = parser.expression()?;
@@ -305,19 +312,20 @@ fn process(input: &str) -> String {
 
 #[tauri::command]
 fn test() -> String {
-    let test_cases = [
-        ("1+1", 2),
-        ("1+2*2", 5),
-        ("1+2*3^2", 19),
-        ("3!", 6),
-        ("5!", 120),
-        ("3!!", 720),
-        ("3*3!+1", 19),
-        ("(3*3)!-1", 362879),
+    let test_cases: [(&str, f64); 9] = [
+        ("1+1", 2.0),
+        ("1+2*2", 5.0),
+        ("1+2*3^2", 19.0),
+        ("3!", 6.0),
+        ("5!", 120.0),
+        ("3!!", 720.0),
+        ("3*3!+1", 19.0),
+        ("(3*3)!-1", 362879.0),
+        ("-2*((1+3)*3)", -24.0),
     ];
     let mut failed = Vec::new();
     for (input_string, expected_output) in test_cases {
-        let result = process(input_string).parse::<i32>().unwrap();
+        let result = process(input_string).parse::<f64>().unwrap();
         if result != expected_output {
             failed.push((input_string, expected_output, result))
         }
