@@ -309,6 +309,11 @@ fn test() -> String {
         ("1+1", 2),
         ("1+2*2", 5),
         ("1+2*3^2", 19),
+        ("3!", 6),
+        ("5!", 120),
+        ("3!!", 720),
+        ("3*3!+1", 19),
+        ("(3*3)!-1", 362879),
     ];
     let mut failed = Vec::new();
     for (input_string, expected_output) in test_cases {
