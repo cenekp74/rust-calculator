@@ -7,9 +7,23 @@ tauri::Builder::default()
     .expect("error while running tauri application");
 }
 
+fn factorial(number : i32) -> Result<i32, CalculatorError> {
+    let mut factorial : i32 = 1;
+    for i in 1..(number+1) {
+        if let Some(n) = factorial.checked_mul(i) {
+            factorial = n;
+        }
+        else {
+            return Err(CalculatorError::MathError);
+        }
+    }
+    Ok(factorial)
+}
+
 enum CalculatorError {
     SyntaxError(&'static str),
     InternalError(&'static str),
+    MathError,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -20,6 +34,7 @@ enum Token {
     Star,
     Slash,
     Power,
+    Exclamation,
     OpenParent,
     CloseParent,
     End,
@@ -32,6 +47,7 @@ enum Operator {
     Dev,
     Mul,
     Pow,
+    Fac,
     Neg,
 }
 
@@ -61,6 +77,7 @@ impl Expression {
                 let expr_value = expr.eval()?;
                 match op {
                     Operator::Neg => Ok(-expr_value),
+                    Operator::Fac => factorial(expr_value),
                     _ => Err(CalculatorError::InternalError("evaluation error"))
                 }
             }
@@ -100,6 +117,9 @@ fn tokenize(s: &str) -> Result<Vec<Token>, CalculatorError> {
         }
         else if c == '^' {
             tokens.push(Token::Power)
+        }
+        else if c == '!' {
+            tokens.push(Token::Exclamation)
         }
         else if c == '(' {
             tokens.push(Token::OpenParent)
@@ -142,27 +162,41 @@ impl Parser {
     
     fn primary(&mut self) -> Result<Expression, CalculatorError> {
         let token = self.current_token()?;
+        let mut result_expression: Expression;
         self.consume_token();
         match token {
-            Token::Integer(n) => Ok(Expression::Integer(n)),
+            Token::Integer(n) => {result_expression = Expression::Integer(n)},
             Token::OpenParent => {
                 let expr = self.expression()?;
                 match self.current_token()? {
-                    Token::CloseParent => Ok(expr),
-                    _ => Err(CalculatorError::SyntaxError("Parenthesis error")),
+                    Token::CloseParent => {result_expression = expr; self.consume_token()},
+                    _ => {return Err(CalculatorError::SyntaxError("Parenthesis error"));},
                 }
             }
             Token::Minus => {
                 let expr = self.factor()?;
-                Ok(Expression::Unary(
+                result_expression = Expression::Unary(
                     Operator::Neg,
                     Box::new(expr),
-                ))
+                );
             }
             _ => {
-                Err(CalculatorError::SyntaxError(""))
+                return Err(CalculatorError::SyntaxError(""));
             }
         }
+        loop {
+            if let Token::Exclamation = self.current_token()? {
+                self.consume_token();
+                result_expression = Expression::Unary(Operator::Fac, Box::new(result_expression));
+            }
+            else {
+                break;
+            }
+        }
+        if let Token::Integer(_) = self.current_token()? {
+            return Err(CalculatorError::SyntaxError(""));
+        }
+        Ok(result_expression)
     }
 
     fn factor(&mut self) -> Result<Expression, CalculatorError> {
@@ -249,6 +283,7 @@ fn process_calculator_string(input: &str) -> Result<i32, CalculatorError> {
     let tokens: Vec<Token> = tokenize(input)?;
     let mut parser = Parser::new(tokens);
     let expr = parser.expression()?;
+    println!("{:?}", expr);
     let res = expr.eval()?;
     Ok(res)
 }
@@ -262,6 +297,7 @@ fn process(input: &str) -> String {
             match e {
                 CalculatorError::InternalError(s) => String::from(format!("Internal error: {}", s)),
                 CalculatorError::SyntaxError(s) => String::from(format!("Syntax error {}", s)),
+                CalculatorError::MathError => String::from("Math error"),
             }
         }
     }
