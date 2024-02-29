@@ -44,11 +44,17 @@ body { min-height: 100vh; }
 
 .input-row {
     margin-top: 3rem;
-    height: 3rem;
+    height: 4.5rem;
     padding-bottom: .5rem;
     border-bottom: 1px solid var(--calculator-border-color);
     margin-bottom: 2rem;
-    overflow: hidden;
+    position: relative;
+}
+
+small.error {
+    color: red;
+    position: absolute;
+    bottom: -1rem;
 }
 
 .input-row input {

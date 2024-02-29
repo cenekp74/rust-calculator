@@ -4,9 +4,14 @@ const allowedCharactersRegex = /[0123456789/*\-+()^!]/;
 
 async function process() {
     in_ele = document.getElementById('input');
+    err_ele = document.getElementsByClassName('error')[0];
     await invoke('process', { input: in_ele.value })
         .then((response) => {
-            if (response.includes('error')) return; // dodelat nejaky ukazani syntax err
+            if (response.includes('error')) {
+                err_ele.innerHTML = response
+                return
+            };
+            err_ele.innerHTML = ''
             in_ele.value = response
     })
 }
