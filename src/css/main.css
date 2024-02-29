@@ -1,7 +1,7 @@
 :root {
     --calculator-border-color: #323232;
     --button-height: 3rem;
-    --border-radius: 7px;
+    --border-radius: 5px;
     --bg-color: #1e2122;
     --button-color: #303334;
     --button-hover-color: #383c3d;
@@ -11,6 +11,11 @@
     --eq-text-color: #000000;
 }
 
+* { 
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
 body {
     background-color: var(--bg-color);
