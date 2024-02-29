@@ -1,5 +1,7 @@
 const { invoke } = window.__TAURI__.tauri
 
+const allowedCharactersRegex = /[0123456789/*\-+()^!]/;
+
 async function process() {
     in_ele = document.getElementById('input');
     await invoke('process', { input: in_ele.value })
@@ -44,9 +46,8 @@ function handleKeyPress(e) {
     }
     if (key == '=') process();
     if (key == 'Enter') process();
-    const allowedCharactersRegex = /[0123456789/*\-+()^]/;
+
     if (!allowedCharactersRegex.test(key)) return;
-    in_ele = document.getElementById('input');
     in_ele.value += key;
 }
 
@@ -56,5 +57,21 @@ buttons.forEach(function (element) {
         handleButtonClick(element);
     });
 });
+
+in_ele = document.getElementById('input');
+
+in_ele.addEventListener('keydown', function(event) {
+    if (event.key == 'Enter') process();
+    if(event.ctrlKey
+    || event.altKey
+    || typeof event.key !== 'string'
+    || event.key.length !== 1) {
+        return;
+    }
+    
+    if(!allowedCharactersRegex.test(event.key)) {
+        event.preventDefault();
+    }
+}, false);
 
 document.addEventListener('keydown', handleKeyPress);
