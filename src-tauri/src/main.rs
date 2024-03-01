@@ -216,9 +216,6 @@ impl Parser {
                 break;
             }
         }
-        if let Token::Number(_) = self.current_token()? {
-            return Err(CalculatorError::SyntaxError(""));
-        }
         Ok(result_expression)
     }
 
@@ -300,12 +297,24 @@ impl Parser {
         }
         Ok(expr)
     }
+
+    fn start(&mut self) -> Result<Expression, CalculatorError> {
+        let expr = self.expression()?;
+        // because of cases when user inputs something that evaluates to a P that is not followed by a binary operator (for exapmle 6(1+1) would evaluate to 6, because everything 
+        // after the 6 would be ignored)
+        if let Token::End = self.current_token()?  {
+            Ok(expr)
+        }
+        else {
+            Err(CalculatorError::SyntaxError(""))
+        }
+    }
 }
 
 fn process_calculator_string(input: &str) -> Result<f64, CalculatorError> {
     let tokens: Vec<Token> = tokenize(input)?;
     let mut parser = Parser::new(tokens);
-    let expr = parser.expression()?;
+    let expr = parser.start()?;
     // println!("{:?}", expr);
     let res = expr.eval()?;
     Ok(res)
