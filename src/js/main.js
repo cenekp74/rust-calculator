@@ -62,6 +62,7 @@ buttons.forEach(function (element) {
     });
 });
 
+// this is to prevent user from entering random characters into the input bar
 in_ele.addEventListener('keydown', function(event) {
     if (event.key == 'Enter') process();
     if(event.ctrlKey
