@@ -1,10 +1,10 @@
 const { invoke } = window.__TAURI__.tauri
 
 const allowedCharactersRegex = /[0123456789/*\-+()^!]/;
+const in_ele = document.getElementById('input');
+const err_ele = document.getElementsByClassName('error')[0];
 
 async function process() {
-    in_ele = document.getElementById('input');
-    err_ele = document.getElementsByClassName('error')[0];
     await invoke('process', { input: in_ele.value })
         .then((response) => {
             if (response.includes('error')) {
@@ -24,7 +24,6 @@ async function test() {
 }
 
 function handleButtonClick(ele) {
-    in_ele = document.getElementById('input');
     action = ele.id;
     if (action == 'eq') return;
     if (action == 'del') {
@@ -32,6 +31,7 @@ function handleButtonClick(ele) {
         return
     }
     if (action == 'ac') {
+        err_ele.innerHTML = '';
         in_ele.value = '';
         return
     }
@@ -42,7 +42,6 @@ function handleKeyPress(e) {
     source = e.target;
     if (source.tagName.toLowerCase() == 'input') return;
 
-    in_ele = document.getElementById('input');
     key = e.key;
     
     if (key == 'Backspace') {
@@ -62,8 +61,6 @@ buttons.forEach(function (element) {
         handleButtonClick(element);
     });
 });
-
-in_ele = document.getElementById('input');
 
 in_ele.addEventListener('keydown', function(event) {
     if (event.key == 'Enter') process();

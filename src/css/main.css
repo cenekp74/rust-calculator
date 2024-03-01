@@ -1,6 +1,6 @@
 :root {
     --calculator-border-color: #323232;
-    --button-height: 3rem;
+    --button-height: 7svh;
     --border-radius: 5px;
     --bg-color: #1e2122;
     --button-color: #303334;
@@ -74,6 +74,7 @@ small.error {
 .calculator-keyboard {
     display: grid;
     grid-template-columns: 2fr 1fr;
+    grid-template-rows: 1fr 4fr;
     gap: 2px;
 }
 
@@ -81,6 +82,7 @@ small.error {
     gap: 2px;
     display: grid;
     grid-template-columns: repeat(3, 1fr);
+    grid-row: 2;
 }
 
 .operations {
@@ -88,6 +90,13 @@ small.error {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     height: min-content;
+    grid-row: 2;
+}
+
+.functions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 2px;
 }
 
 button.calculator-button {
@@ -98,9 +107,7 @@ button.calculator-button {
     background-color: var(--button-color);
     color: var(--text-color);
     border: none;
-    padding: 0;
     transition: background-color .1s;
-    height: 7svh;
     min-height: 2rem;
 }
 
