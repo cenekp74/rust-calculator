@@ -1,6 +1,6 @@
 const { invoke } = window.__TAURI__.tauri
 
-const allowedCharactersRegex = /[0123456789/*\-+()^!]/;
+const allowedCharactersRegex = /[0123456789/*\-+()^!.]/;
 const in_ele = document.getElementById('input');
 const err_ele = document.getElementsByClassName('error')[0];
 

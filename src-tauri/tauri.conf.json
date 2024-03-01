@@ -20,7 +20,9 @@
       {
         "title": "tauri-calculator",
         "width": 360,
-        "height": 580
+        "height": 580,
+        "minWidth": 250,
+        "minHeight": 410
       }
     ],
     "security": {
