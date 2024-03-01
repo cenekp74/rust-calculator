@@ -19,7 +19,7 @@ async function process() {
 async function test() {
     await invoke('test')
         .then((response) => {
-            window.result.innerHTML = response
+            console.log(response)
     })
 }
 
