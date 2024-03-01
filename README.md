@@ -21,7 +21,7 @@ F = factor
 v = constant (a floating point number for now)
 
 ## Frontend
-The frontend part is implemented using pure html/js/css. The desing is heavily inspired by windows calculator. 
+The frontend part is implemented using Tauri and pure html/js/css. The desing is heavily inspired by windows calculator. 
 
 ## TODO
 - [x] error handling 
