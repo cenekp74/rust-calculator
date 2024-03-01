@@ -9,7 +9,7 @@ I created the parsing with the help of this article: https://www.engr.mun.ca/~th
 S -> E end
 E -> T {("+" | "-") T}
 T -> F {("*" | "/") F}
-F -> P ["^" F]
+F -> P | P "^" F
 P -> (v | "(" E ")" | "-" T | {P "!"})
 end expression has to be reached
 ```
