@@ -9,8 +9,11 @@ tauri::Builder::default()
 }
 
 fn factorial(number : i128) -> Result<f64, CalculatorError> {
+    if number < 0 {
+        return Err(CalculatorError::MathError)
+    }
     let mut factorial : i128 = 1;
-    for i in 1..(number+1) {
+    for i in 1..=number {
         if let Some(n) = factorial.checked_mul(i) {
             factorial = n;
         }
