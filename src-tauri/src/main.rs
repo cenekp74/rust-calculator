@@ -213,14 +213,9 @@ impl Parser {
                 return Err(CalculatorError::SyntaxError(""));
             }
         }
-        loop {
-            if let Token::Exclamation = self.current_token()? {
-                self.consume_token();
-                result_expression = Expression::Unary(Operator::Fac, Box::new(result_expression));
-            }
-            else {
-                break;
-            }
+        while let Token::Exclamation = self.current_token()? {
+            self.consume_token();
+            result_expression = Expression::Unary(Operator::Fac, Box::new(result_expression));
         }
         Ok(result_expression)
     }
