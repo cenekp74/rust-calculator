@@ -72,7 +72,10 @@ impl Expression {
                     Operator::Add => Ok(lhs_value + rhs_value),
                     Operator::Sub => Ok(lhs_value - rhs_value),
                     Operator::Mul => Ok(lhs_value * rhs_value),
-                    Operator::Dev => Ok(lhs_value / rhs_value),
+                    Operator::Dev => {
+                        if rhs_value == 0.0 { return Err(CalculatorError::MathError) }
+                        Ok(lhs_value / rhs_value)
+                    },
                     Operator::Pow => Ok(f64::powf(lhs_value, rhs_value)),
                     _ => Err(CalculatorError::InternalError("evaluation error"))
                 }
