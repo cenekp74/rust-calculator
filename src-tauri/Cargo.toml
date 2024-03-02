@@ -1,11 +1,9 @@
 [package]
 name = "tauri-calculator"
-version = "0.0.0"
-description = "A Tauri App"
-authors = ["you"]
+version = "0.1.0"
+description = "A calculator written in tauri Rust"
+authors = ["Cenek Potuznik"]
 edition = "2021"
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [build-dependencies]
 tauri-build = { version = "1.5.1", features = [] }

@@ -42,3 +42,6 @@ The frontend part is implemented using Tauri and pure html/js/css. The desing is
 - [ ] history
 - [ ] exponential number notation (\*10^n)
 - [ ] constants (pi, e, ...)
+
+#
+Calculator icon by Icons8
