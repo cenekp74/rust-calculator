@@ -17,12 +17,12 @@ F -> P | P "^" F
 P -> (v | "(" E ")" | "-" T | {P "!"})
 end expression has to be reached
 ```
-S = start
-E = expression
-P = primary
-T = term
-F = factor
-v = constant (a floating point number for now)
+- S = start
+- E = expression
+- P = primary
+- T = term
+- F = factor
+- v = constant (a floating point number for now)
 
 ## Frontend
 The frontend part is implemented using Tauri and pure html/js/css. The desing is heavily inspired by windows calculator. 
