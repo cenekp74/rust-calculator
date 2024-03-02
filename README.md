@@ -1,9 +1,13 @@
 # Rust calculator
 This is my first Rust project. It is a calculator with a custom parser. The goal of this project is for me to learn a bit of Rust and to get familiar with its syntax. 
 
+![screenshot of the calculator's frontend](screenshot.png)
+
+## How to run
+To run the program, simply clone the repo and run `cargo tauri dev` inside of the folder. 
+
 ## Parsing
 I created the parsing with the help of this article: https://www.engr.mun.ca/~theo/Misc/exp_parsing.htm
-
 ### Grammar
 ```
 S -> E end
